@@ -1,9 +1,19 @@
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.SimpleAttributeSet;
+import javax.swing.text.StyleConstants;
+import javax.swing.text.StyledDocument;
+
 import java.awt.*;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.awt.event.ActionListener;
+import java.awt.event.ActionEvent;
+
 
 public class OrangeApp extends JFrame {
 
@@ -14,6 +24,26 @@ public class OrangeApp extends JFrame {
         super("SOM-D — ภาพรวมกระบวนการผลิตน้ำส้ม");
         applyThaiUI();
         try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); } catch (Exception ignored) {}
+ // ===== บังคับให้แสดงผลภาษาไทยใน Swing =====
+System.setProperty("file.encoding", "UTF-8");
+System.setProperty("awt.useSystemAAFontSettings", "on");
+System.setProperty("swing.aatext", "true");
+
+// เลือกฟอนต์ไทยที่มีเกือบทุกเครื่อง Windows
+final Font THAI_FONT = new Font("Tahoma", Font.PLAIN, 18);
+
+// บังคับ UI ทั้งระบบใช้ฟอนต์นี้
+UIManager.put("Button.font", THAI_FONT);
+UIManager.put("Label.font", THAI_FONT);
+UIManager.put("TextField.font", THAI_FONT);
+UIManager.put("TextArea.font", THAI_FONT);
+UIManager.put("Table.font", THAI_FONT);
+UIManager.put("TableHeader.font", THAI_FONT);
+UIManager.put("List.font", THAI_FONT);
+UIManager.put("ComboBox.font", THAI_FONT);
+UIManager.put("OptionPane.messageFont", THAI_FONT);
+UIManager.put("OptionPane.buttonFont", THAI_FONT);
+UIManager.put("TitledBorder.font", THAI_FONT);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setSize(1150, 750);
@@ -50,10 +80,16 @@ public class OrangeApp extends JFrame {
             btn.addActionListener(e -> showPageForStep(s));
             stepsBar.add(btn);
         }
-        JButton btProduct = mintButton("🧃 จัดการสินค้า");
+        JButton btProduct = mintButton("จัดการสินค้า");
         btProduct.addActionListener(e -> card.show(pages, "product"));
         stepsBar.add(btProduct);
         header.add(stepsBar);
+
+        // ปุ่มวิเคราะห์ยอดขาย
+        JButton btAnalytics = mintButton("📈 วิเคราะห์ยอดขาย");
+        stepsBar.add(btAnalytics);
+        btAnalytics.addActionListener(e -> card.show(pages, "analytics"));
+
 
         /* ---------- Pages ---------- */
         pages.add(buildDashboardPage(), "dashboard");
@@ -65,6 +101,13 @@ public class OrangeApp extends JFrame {
         pages.add(buildPasteurizePage(), "pasteurize");
         pages.add(buildPackPage(), "pack");
         pages.add(buildShipPage(), "ship");
+        pages.add(buildBranchPage(), "branch");
+        pages.add(buildOrdersPage(), "orders");
+        pages.add(buildAlertsPage(), "alerts");
+        pages.add(buildChatPage(),   "chat");
+        pages.add(buildAnalyticsPage(), "analytics");
+
+
 
         root.add(pages, BorderLayout.CENTER);
 
@@ -153,16 +196,18 @@ public class OrangeApp extends JFrame {
 
         JPanel navButtons = new JPanel(new FlowLayout(FlowLayout.LEFT,15,10));
         navButtons.setBackground(new Color(255, 250, 230));
-        JButton btBranch = navButton("🏬 จัดการสาขา");
-        JButton btOrder  = navButton("🛒 ออเดอร์ / การสั่งซื้อ");
-        JButton btAlert  = navButton("🔔 แจ้งเตือน");
-        JButton btChat   = navButton("💬 แชทลูกค้า");
+        JButton btBranch = navButton(" จัดการสาขา");
+        JButton btOrder  = navButton(" ออเดอร์ / การสั่งซื้อ");
+        JButton btAlert  = navButton(" แจ้งเตือน");
+        JButton btChat   = navButton(" แชทลูกค้า");
         for (JButton b : new JButton[]{btBranch, btOrder, btAlert, btChat}) navButtons.add(b);
-        btBranch.addActionListener(e -> JOptionPane.showMessageDialog(this,"จัดการสาขา — Coming Soon"));
-        btOrder.addActionListener(e -> JOptionPane.showMessageDialog(this,"ออเดอร์ — Coming Soon"));
-        btAlert.addActionListener(e -> JOptionPane.showMessageDialog(this,"แจ้งเตือน — Coming Soon"));
-        btChat.addActionListener(e -> JOptionPane.showMessageDialog(this,"แชทลูกค้า — Coming Soon"));
+        btBranch.addActionListener(e -> card.show(pages, "branch"));
+        btOrder .addActionListener(e -> card.show(pages, "orders"));
+        btAlert .addActionListener(e -> card.show(pages, "alerts"));
+        btChat  .addActionListener(e -> card.show(pages, "chat"));
         page.add(navButtons, BorderLayout.NORTH);
+
+        
 
         JPanel filterPanel = new JPanel(new FlowLayout(FlowLayout.LEFT,15,8));
         filterPanel.setBackground(new Color(255,250,235));
@@ -170,8 +215,8 @@ public class OrangeApp extends JFrame {
         JComboBox<String> c1 = new JComboBox<>(new String[]{"น้ำส้มสด","สมูทตี้","คอมโบ"});
         JComboBox<String> c2 = new JComboBox<>(new String[]{"คั้นสด","พาสเจอร์ไรซ์"});
         JComboBox<String> c3 = new JComboBox<>(new String[]{"ไซส์เล็ก","ไซส์กลาง","ไซส์ใหญ่"});
-        JButton add = new JButton("➕ เพิ่มสินค้า");
-        JButton del = new JButton("🗑️ ลบสินค้า");
+        JButton add = new JButton("+ เพิ่มสินค้า");
+        JButton del = new JButton("- ลบสินค้า");
         styleButton(add, new Color(67, 226, 206));
         styleButton(del, new Color(255, 120, 120));
         filterPanel.add(new JLabel("หมวดหลัก:")); filterPanel.add(c1);
@@ -825,6 +870,818 @@ private JComponent buildShipPage(){
 
     return page;
 }
+/* ================= Analytics Page (สวย ไม่ทับซ้อน) ================= */
+private JComponent buildAnalyticsPage() {
+    JPanel page = new JPanel(new BorderLayout(12,12));
+    page.setBorder(new EmptyBorder(16,16,16,16));
+    page.setBackground(new Color(253,246,227));
+
+    // Header
+    JPanel header = new JPanel(new BorderLayout());
+    header.setOpaque(false);
+    JLabel title = new JLabel("📈 วิเคราะห์ยอดขาย");
+    title.setFont(title.getFont().deriveFont(Font.BOLD, 26f));
+    title.setForeground(new Color(245,130,31));
+    JButton btBack = mintButton("← กลับหน้าหลัก");
+    btBack.addActionListener(e -> card.show(pages, "dashboard"));
+    header.add(title, BorderLayout.WEST);
+    header.add(btBack, BorderLayout.EAST);
+    page.add(header, BorderLayout.NORTH);
+
+    // Controls (อยู่บนสุดใต้หัวข้อ)
+    JPanel controls = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
+    controls.setBackground(new Color(255,250,235));
+    controls.setBorder(BorderFactory.createTitledBorder("ตัวเลือกการเปรียบเทียบ"));
+
+    String[] modes = {"ยอดขาย 10 ปีย้อนหลัง (รวมทั้งหมด)","ยอดขายตามฤดูกาล (รวมทุกปี)"};
+    JComboBox<String> cbMode = new JComboBox<>(modes);
+    JButton btRefresh   = mintButton("รีเฟรช");
+    JButton btExportCSV = mintButton("ส่งออก CSV");
+    JButton btExportPNG = mintButton("บันทึก PNG");
+    controls.add(new JLabel("โหมด:"));
+    controls.add(cbMode);
+    controls.add(btRefresh);
+    controls.add(btExportCSV);
+    controls.add(btExportPNG);
+
+    page.add(controls, BorderLayout.BEFORE_FIRST_LINE);
+
+    // Chart + wrap ให้มี padding ด้านใน
+    JPanel chartWrap = new JPanel(new BorderLayout());
+    chartWrap.setBackground(Color.WHITE);
+    chartWrap.setBorder(new EmptyBorder(12,12,12,12));
+    SalesAnalyticsPanel chart = new SalesAnalyticsPanel();
+    chart.setPreferredSize(new Dimension(980, 380));
+    chartWrap.add(chart, BorderLayout.CENTER);
+    page.add(chartWrap, BorderLayout.CENTER);
+
+    // Summary table (สูงคงที่)
+    String[] cols = {"มิติ","ช่วง","ยอดขาย(บาท)"};
+    DefaultTableModel summaryModel = new DefaultTableModel(cols, 0) { public boolean isCellEditable(int r,int c){return false;} };
+    JTable summaryTable = new JTable(summaryModel);
+    summaryTable.setRowHeight(26);
+    summaryTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+    summaryTable.getColumnModel().getColumn(0).setPreferredWidth(120);
+    summaryTable.getColumnModel().getColumn(1).setPreferredWidth(220);
+    summaryTable.getColumnModel().getColumn(2).setPreferredWidth(180);
+    JScrollPane summarySP = new JScrollPane(summaryTable);
+    summarySP.setPreferredSize(new Dimension(100, 220));
+    summarySP.setBorder(BorderFactory.createTitledBorder("ตารางสรุป"));
+    page.add(summarySP, BorderLayout.SOUTH);
+
+    // Render summary by mode
+    Runnable render = () -> {
+        String mode = (String) cbMode.getSelectedItem();
+        chart.setMode(mode);
+        chart.repaint();
+
+        summaryModel.setRowCount(0);
+        if (chart.isSeasonMode()) {
+            java.util.Map<String, Double> season = chart.getSeasonTotals();
+            summaryModel.addRow(new Object[]{"ฤดูกาล","ร้อน (มี.ค.–พ.ค.)",  String.format("%,.0f", season.get("ร้อน"))});
+            summaryModel.addRow(new Object[]{"ฤดูกาล","ฝน (มิ.ย.–ต.ค.)",   String.format("%,.0f", season.get("ฝน"))});
+            summaryModel.addRow(new Object[]{"ฤดูกาล","หนาว (พ.ย.–ก.พ.)", String.format("%,.0f", season.get("หนาว"))});
+        } else {
+            java.util.Map<Integer, Double> years = chart.getYearly();
+            java.util.List<Integer> keys = new java.util.ArrayList<>(years.keySet());
+            java.util.Collections.sort(keys);
+            for (Integer y : keys) {
+                summaryModel.addRow(new Object[]{"ปี", y.toString(), String.format("%,.0f", years.get(y))});
+            }
+        }
+    };
+    render.run();
+
+    btRefresh.addActionListener(e -> render.run());
+    cbMode.addActionListener(e -> render.run());
+
+    btExportCSV.addActionListener(e -> {
+        try {
+            java.io.File f = new java.io.File("analytics_export.csv");
+            try (java.io.PrintWriter pw = new java.io.PrintWriter(f, java.nio.charset.StandardCharsets.UTF_8)) {
+                pw.println("dimension,period,sales");
+                for (int i=0;i<summaryModel.getRowCount();i++){
+                    pw.println(summaryModel.getValueAt(i,0)+","+summaryModel.getValueAt(i,1)+","+summaryModel.getValueAt(i,2));
+                }
+            }
+            msg("บันทึกไฟล์: " + f.getAbsolutePath());
+        } catch (Exception ex) {
+            msg("บันทึก CSV ไม่สำเร็จ: " + ex.getMessage());
+        }
+    });
+
+    btExportPNG.addActionListener(e -> {
+        try {
+            java.awt.image.BufferedImage img = new java.awt.image.BufferedImage(chart.getWidth(), chart.getHeight(), java.awt.image.BufferedImage.TYPE_INT_ARGB);
+            java.awt.Graphics2D g2 = img.createGraphics();
+            chart.printAll(g2);
+            g2.dispose();
+            java.io.File f = new java.io.File("analytics_chart.png");
+            javax.imageio.ImageIO.write(img, "png", f);
+            msg("บันทึกภาพ: " + f.getAbsolutePath());
+        } catch (Exception ex) {
+            msg("บันทึก PNG ไม่สำเร็จ: " + ex.getMessage());
+        }
+    });
+
+    return page;
+}
+
+/* ===== กราฟวิเคราะห์ยอดขาย (Java2D) — ป้ายไม่ชน, เส้นอ่านง่าย ===== */
+private static class SalesAnalyticsPanel extends JPanel {
+    private final java.util.Map<Integer, Double> salesByYear = new java.util.LinkedHashMap<>();
+    private final java.util.Map<String, Double> salesBySeason = new java.util.LinkedHashMap<>();
+    private boolean seasonMode = false; // false = 10 ปี (Line), true = ฤดูกาล (Bar)
+
+    SalesAnalyticsPanel() {
+        setBackground(Color.WHITE);
+        generateDemoData();
+        computeSeasons();
+    }
+
+    void setMode(String modeText){ this.seasonMode = (modeText != null && modeText.contains("ฤดูกาล")); }
+    boolean isSeasonMode(){ return seasonMode; }
+    java.util.Map<Integer, Double> getYearly(){ return salesByYear; }
+    java.util.Map<String, Double> getSeasonTotals(){ return salesBySeason; }
+
+    // Mock 10 ปี
+    private void generateDemoData(){
+        int year = java.time.LocalDate.now().getYear();
+        java.util.Random rnd = new java.util.Random(42);
+        double base = 1_200_000;
+        for (int y = year-9; y <= year; y++){
+            double trend = (y - (year-9)) * 40_000;
+            double noise = (rnd.nextDouble() - 0.5) * 120_000;
+            salesByYear.put(y, Math.max(200_000, base + trend + noise));
+        }
+    }
+    private void computeSeasons(){
+        double hot=0, rain=0, cold=0;
+        java.util.Random rnd = new java.util.Random(99);
+        for (int y: salesByYear.keySet()){
+            double yearTotal = salesByYear.get(y);
+            double[] monthWeight = new double[12];
+            for (int m=0;m<12;m++){
+                double w = 1.0 + (m==10||m==11||m==0? 0.15: 0) + (rnd.nextDouble()-0.5)*0.08;
+                monthWeight[m] = Math.max(0.6, w);
+            }
+            double sumW = java.util.Arrays.stream(monthWeight).sum();
+            for (int m=0;m<12;m++){
+                double mn = yearTotal * (monthWeight[m]/sumW);
+                int mo = m+1;
+                if (mo>=3 && mo<=5) hot += mn;       // มี.ค.–พ.ค.
+                else if (mo>=6 && mo<=10) rain += mn;// มิ.ย.–ต.ค.
+                else cold += mn;                      // พ.ย.–ก.พ.
+            }
+        }
+        salesBySeason.put("ร้อน", hot);
+        salesBySeason.put("ฝน", rain);
+        salesBySeason.put("หนาว", cold);
+    }
+
+    @Override protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2 = (Graphics2D) g.create();
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        // พื้นหลังกรอบ
+        g2.setColor(new Color(250,250,248));
+        g2.fillRoundRect(0,0,getWidth(),getHeight(),14,14);
+
+        // Layout พื้นที่กราฟ
+        int left = 90, right = 40, top = 60, bottom = 70; // กว้างขึ้น กันซ้อน
+        int x = left, y = top, w = getWidth()-left-right, h = getHeight()-top-bottom;
+
+        // Title
+        g2.setColor(new Color(245,130,31));
+        g2.setFont(g2.getFont().deriveFont(Font.BOLD, 16f));
+        g2.drawString(seasonMode? "เปรียบเทียบยอดขายตามฤดูกาล (บาท) — รวมทุกปี"
+                                : "แนวโน้มยอดขาย 10 ปีย้อนหลัง (บาท)", x, y-26);
+
+        // grid
+        g2.setColor(new Color(232,232,232));
+        for (int i=0;i<=5;i++){
+            int yy = y + (int)(h * i/5.0);
+            g2.drawLine(x, yy, x+w, yy);
+        }
+
+        if (seasonMode) drawBarSeasons(g2, x, y, w, h);
+        else drawLine10Years(g2, x, y, w, h);
+
+        // แกน X เส้นฐาน
+        g2.setColor(new Color(180,180,180));
+        g2.drawLine(x, y+h, x+w, y+h);
+
+        g2.dispose();
+    }
+
+    private void drawLine10Years(Graphics2D g2, int x, int y, int w, int h){
+        double max = salesByYear.values().stream().mapToDouble(Double::doubleValue).max().orElse(1d);
+        java.util.List<Integer> years = new java.util.ArrayList<>(salesByYear.keySet());
+        java.util.Collections.sort(years);
+        int n = years.size();
+
+        // Y labels
+        g2.setColor(new Color(120,120,120));
+        g2.setFont(g2.getFont().deriveFont(12f));
+        for (int k=0;k<=5;k++){
+            double val = max*(1.0 - k/5.0);
+            String s = String.format("%,.0f", val);
+            drawRight(g2, s, x-10, y+(int)(h*k/5.0), 80, 16);
+        }
+
+        // line + points
+        g2.setStroke(new BasicStroke(2f));
+        g2.setColor(new Color(67,226,206));
+        int prevX=-1, prevY=-1;
+        for (int i=0;i<n;i++){
+            int yr = years.get(i);
+            double v = salesByYear.get(yr);
+            int px = x + (int)(w * (i/(double)(n-1)));
+            int py = y + (int)(h * (1.0 - (v/max)));
+            if (prevX!=-1) g2.drawLine(prevX, prevY, px, py);
+            g2.fillOval(px-4, py-4, 8, 8);
+            prevX=px; prevY=py;
+        }
+
+        // X labels (วางใต้กราฟ +間隔)
+        int step = (n > 8 ? 2 : 1); // ข้ามปีถ้าแน่น
+        g2.setColor(new Color(90,90,90));
+        for (int i=0;i<n;i+=step){
+            int yr = years.get(i);
+            int px = x + (int)(w * (i/(double)(n-1)));
+            g2.drawLine(px, y+h, px, y+h+4);
+            drawCenter(g2, String.valueOf(yr), px-20, y+h+8, 40, 18);
+        }
+    }
+
+    private void drawBarSeasons(Graphics2D g2, int x, int y, int w, int h){
+        double max = salesBySeason.values().stream().mapToDouble(Double::doubleValue).max().orElse(1d);
+        String[] cats = {"ร้อน","ฝน","หนาว"};
+
+        // Y labels
+        g2.setColor(new Color(120,120,120));
+        g2.setFont(g2.getFont().deriveFont(12f));
+        for (int k=0;k<=5;k++){
+            double val = max*(1.0 - k/5.0);
+            drawRight(g2, String.format("%,.0f", val), x-10, y+(int)(h*k/5.0), 80, 16);
+        }
+
+        int bars = cats.length;
+        int bw = Math.max(50, (int)(w*0.18));
+        int gap = (w - bars*bw) / (bars+1);
+        int cx = x+gap;
+
+        for (String c : cats){
+            double v = salesBySeason.getOrDefault(c, 0d);
+            int bh = (int)(h * (v/max));
+            int by = y + h - bh;
+
+            g2.setColor(new Color(255, 200, 120));
+            g2.fillRoundRect(cx, by, bw, bh, 10, 10);
+            g2.setColor(new Color(210,140,80));
+            g2.drawRoundRect(cx, by, bw, bh, 10, 10);
+
+            g2.setColor(new Color(50,50,50));
+            drawCenter(g2, c, cx, y+h+8, bw, 18);
+            drawCenter(g2, String.format("%,.0f", v), cx, by-20, bw, 18);
+
+            cx += bw + gap;
+        }
+    }
+
+    // helpers (วาดข้อความจัดตำแหน่ง)
+    private void drawCenter(Graphics2D g2, String s, int x, int y, int w, int h){
+        FontMetrics fm = g2.getFontMetrics();
+        int tx = x + (w - fm.stringWidth(s))/2;
+        int ty = y + ((h - fm.getHeight())/2) + fm.getAscent();
+        g2.drawString(s, tx, ty);
+    }
+    private void drawRight(Graphics2D g2, String s, int x, int y, int w, int h){
+        FontMetrics fm = g2.getFontMetrics();
+        int tx = x + w - fm.stringWidth(s);
+        int ty = y + ((h - fm.getHeight())/2) + fm.getAscent();
+        g2.drawString(s, tx, ty);
+    }
+}
+
+
+/* ================= Branch Page (จัดการสาขา) — มีปุ่ม ← กลับ ================= */
+private JComponent buildBranchPage(){
+    JPanel page = new JPanel(new BorderLayout(10,10));
+    page.setBackground(new Color(250,250,245));
+    page.setBorder(new EmptyBorder(20,20,20,20));
+
+    // ===== Header: ชื่อหน้า + ลูกศรย้อนกลับไป "product"
+    JPanel header = new JPanel(new BorderLayout());
+    header.setOpaque(false);
+
+    JLabel title = new JLabel("🏬 จัดการสาขา");
+    title.setFont(title.getFont().deriveFont(Font.BOLD, 28f));
+    title.setForeground(new Color(245,130,31));
+
+    JButton btBack = mintButton("← กลับ");
+    btBack.addActionListener(e -> card.show(pages, "product")); // << กลับไปหน้าจัดการสินค้า
+
+    header.add(title, BorderLayout.WEST);
+    header.add(btBack, BorderLayout.EAST);
+    page.add(header, BorderLayout.NORTH);
+
+    // ===== ฟิลเตอร์ค้นหา
+    JPanel filter = new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    filter.setBackground(new Color(255,250,235));
+    filter.setBorder(BorderFactory.createTitledBorder("ค้นหาสาขา"));
+
+    JComboBox<String> cbRegion = new JComboBox<>(new String[]{"ทั้งหมด","เหนือ","อีสาน","กลาง","ใต้"});
+    JTextField tfSearch = new JTextField(18); tfSearch.setToolTipText("ชื่อ/รหัสสาขา/จังหวัด");
+    JButton btSearch = new JButton("ค้นหา"); styleButton(btSearch, new Color(67,226,206));
+    JButton btClear  = new JButton("ล้าง");  styleButton(btClear,  new Color(255,180,120));
+
+    filter.add(new JLabel("ภาค:")); filter.add(cbRegion);
+    filter.add(new JLabel("ค้นหา:")); filter.add(tfSearch);
+    filter.add(btSearch); filter.add(btClear);
+
+    page.add(filter, BorderLayout.BEFORE_FIRST_LINE);
+
+    // ===== ตาราง
+    String[] cols = {"รหัสสาขา","ชื่อสาขา","ภาค","จังหวัด","อำเภอ","พนักงาน","สถานะ"};
+    DefaultTableModel model = new DefaultTableModel(cols,0){ public boolean isCellEditable(int r,int c){return false;} };
+    JTable tb = new JTable(model);
+    tb.setRowHeight(26);
+    tb.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+    JScrollPane sp = new JScrollPane(tb);
+    sp.setBorder(BorderFactory.createTitledBorder("รายการสาขา"));
+
+    // ===== ปุ่ม เพิ่ม/แก้ไข/ลบ
+    JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    actions.setBackground(new Color(255,250,240));
+    JButton btAdd = new JButton("➕ เพิ่มสาขา");
+    JButton btEdit = new JButton("✏️ แก้ไข");
+    JButton btDel = new JButton("🗑️ ลบ");
+    for (JButton b : new JButton[]{btAdd,btEdit,btDel}) styleButton(b,new Color(200,245,236));
+    actions.add(btAdd); actions.add(btEdit); actions.add(btDel);
+
+    JPanel center = new JPanel(new BorderLayout(10,10));
+    center.add(sp, BorderLayout.CENTER);
+    center.add(actions, BorderLayout.SOUTH);
+    page.add(center, BorderLayout.CENTER);
+
+    // ===== ตัวอย่างข้อมูลเริ่มต้น
+    model.addRow(new Object[]{"B001","สาขาเชียงใหม่","เหนือ","เชียงใหม่","เมือง","คุณเกียรติ","เปิดขาย"});
+    model.addRow(new Object[]{"B002","สาขานครราชสีมา","อีสาน","นครราชสีมา","เมือง","คุณพร","เปิดขาย"});
+    model.addRow(new Object[]{"B003","สาขาภูเก็ต","ใต้","ภูเก็ต","กะทู้","คุณศร","ปิดปรับปรุง"});
+
+    // ===== ค้นหา (TableRowSorter)
+    final javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(model);
+    tb.setRowSorter(sorter);
+    Runnable applyFilter = () -> {
+        java.util.List<RowFilter<Object,Object>> fs = new java.util.ArrayList<>();
+        String reg = (String) cbRegion.getSelectedItem();
+        if (reg != null && !"ทั้งหมด".equals(reg)) fs.add(RowFilter.regexFilter(reg, 2));
+        String q = tfSearch.getText().trim();
+        if (!q.isEmpty()) fs.add(RowFilter.regexFilter("(?i)"+q, 0,1,3,4)); // รหัส/ชื่อ/จังหวัด/อำเภอ
+        sorter.setRowFilter(fs.isEmpty()? null : RowFilter.andFilter(fs));
+    };
+    btSearch.addActionListener(e -> applyFilter.run());
+    btClear.addActionListener(e -> { cbRegion.setSelectedIndex(0); tfSearch.setText(""); sorter.setRowFilter(null); });
+    tfSearch.addActionListener(e -> applyFilter.run()); // กด Enter ก็ค้นหา
+
+    // ===== เพิ่ม
+    btAdd.addActionListener(e -> {
+        JTextField id=new JTextField(), name=new JTextField(), region=new JTextField(),
+                   prov=new JTextField(), dist=new JTextField(), emp=new JTextField();
+        JComboBox<String> status = new JComboBox<>(new String[]{"เปิดขาย","ปิดปรับปรุง"});
+        Object[] msg={"รหัส:",id,"ชื่อ:",name,"ภาค:",region,"จังหวัด:",prov,"อำเภอ:",dist,"พนักงาน:",emp,"สถานะ:",status};
+        if(JOptionPane.showConfirmDialog(page,msg,"เพิ่มสาขา",JOptionPane.OK_CANCEL_OPTION)==JOptionPane.OK_OPTION)
+            model.addRow(new Object[]{id.getText(),name.getText(),region.getText(),prov.getText(),dist.getText(),emp.getText(),status.getSelectedItem()});
+    });
+
+    // ===== แก้ไข (แถวเดียว)
+    btEdit.addActionListener(e -> {
+        int view = tb.getSelectedRow();
+        if (view < 0) { msg("กรุณาเลือกแถวที่จะแก้ไข"); return; }
+        int r = tb.convertRowIndexToModel(view);
+        JTextField id=new JTextField(model.getValueAt(r,0).toString());
+        JTextField name=new JTextField(model.getValueAt(r,1).toString());
+        JTextField region=new JTextField(model.getValueAt(r,2).toString());
+        JTextField prov=new JTextField(model.getValueAt(r,3).toString());
+        JTextField dist=new JTextField(model.getValueAt(r,4).toString());
+        JTextField emp=new JTextField(model.getValueAt(r,5).toString());
+        JComboBox<String> status=new JComboBox<>(new String[]{"เปิดขาย","ปิดปรับปรุง"});
+        status.setSelectedItem(model.getValueAt(r,6).toString());
+        Object[] msg={"รหัส:",id,"ชื่อ:",name,"ภาค:",region,"จังหวัด:",prov,"อำเภอ:",dist,"พนักงาน:",emp,"สถานะ:",status};
+        if(JOptionPane.showConfirmDialog(page,msg,"แก้ไขสาขา",JOptionPane.OK_CANCEL_OPTION)==JOptionPane.OK_OPTION){
+            model.setValueAt(id.getText(), r, 0);
+            model.setValueAt(name.getText(), r, 1);
+            model.setValueAt(region.getText(), r, 2);
+            model.setValueAt(prov.getText(), r, 3);
+            model.setValueAt(dist.getText(), r, 4);
+            model.setValueAt(emp.getText(), r, 5);
+            model.setValueAt(status.getSelectedItem(), r, 6);
+        }
+    });
+
+    // ===== ลบ (หลายแถว + ปุ่ม Delete + คลิกขวา)
+    Runnable deleteRun=()->{
+        int[] rows=tb.getSelectedRows();
+        if(rows.length==0){ msg("กรุณาเลือกแถวที่จะลบ"); return; }
+        if(JOptionPane.showConfirmDialog(page,"ยืนยันการลบ "+rows.length+" แถว?","ยืนยัน",JOptionPane.OK_CANCEL_OPTION)!=JOptionPane.OK_OPTION) return;
+        for(int i=rows.length-1;i>=0;i--) model.removeRow(tb.convertRowIndexToModel(rows[i]));
+    };
+    btDel.addActionListener(e->deleteRun.run());
+    tb.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("DELETE"),"delRow");
+    tb.getActionMap().put("delRow",new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ deleteRun.run(); }});
+    JPopupMenu pop = new JPopupMenu();
+    JMenuItem mi = new JMenuItem("ลบรายการที่เลือก");
+    mi.addActionListener(e->deleteRun.run());
+    pop.add(mi);
+    tb.setComponentPopupMenu(pop);
+
+    return page;
+}
+
+/* ================= Orders Page ================= */
+private JComponent buildOrdersPage(){
+    JPanel page = new JPanel(new BorderLayout(10,10));
+    page.setBackground(new Color(250,250,245));
+    page.setBorder(new EmptyBorder(20,20,20,20));
+
+    JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false);
+    JLabel h = new JLabel("🛒 ออเดอร์ / การสั่งซื้อ");
+    h.setFont(h.getFont().deriveFont(Font.BOLD, 26f));
+    h.setForeground(new Color(245,130,31));
+    JButton btBack = mintButton("← กลับ");
+    btBack.addActionListener(e -> card.show(pages, "product"));
+    header.add(h, BorderLayout.WEST); header.add(btBack, BorderLayout.EAST);
+    page.add(header, BorderLayout.NORTH);
+
+    // ฟิลเตอร์
+    JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    filters.setBackground(new Color(255,250,235));
+    JComboBox<String> cbStatus = new JComboBox<>(new String[]{"ทั้งหมด","ใหม่","รอดำเนินการ","กำลังเตรียม","จัดส่งแล้ว","สำเร็จ","ยกเลิก"});
+    JTextField tfSearch = new JTextField(18); tfSearch.setToolTipText("เลขที่/ลูกค้า/สาขา");
+    JButton btSearch = new JButton("ค้นหา"); styleButton(btSearch,new Color(200,245,236));
+    JButton btClear  = new JButton("ล้าง");  styleButton(btClear, new Color(255,180,120));
+    filters.add(new JLabel("สถานะ:")); filters.add(cbStatus);
+    filters.add(new JLabel("ค้นหา:")); filters.add(tfSearch);
+    filters.add(btSearch); filters.add(btClear);
+    page.add(filters, BorderLayout.BEFORE_FIRST_LINE);
+
+    String[] cols={"เลขที่ออเดอร์","วันที่","ลูกค้า/สาขา","ยอดรวม(บาท)","สถานะ"};
+    DefaultTableModel m=new DefaultTableModel(cols,0){public boolean isCellEditable(int r,int c){return false;}};
+    JTable tb=new JTable(m); tb.setRowHeight(26);
+    JScrollPane sp=new JScrollPane(tb);
+    sp.setBorder(BorderFactory.createTitledBorder("รายการออเดอร์"));
+    page.add(sp,BorderLayout.CENTER);
+
+    // ตัวอย่าง
+    m.addRow(new Object[]{"SO-001","2025-08-01","สาขาเชียงใหม่",1250,"สำเร็จ"});
+    m.addRow(new Object[]{"SO-002","2025-08-02","คุณอรดี",450,"รอดำเนินการ"});
+
+    // ค้นหา
+    final javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(m);
+    tb.setRowSorter(sorter);
+    Runnable doFilter = () -> {
+        java.util.List<RowFilter<Object,Object>> fs = new java.util.ArrayList<>();
+        String s = (String) cbStatus.getSelectedItem();
+        if (s!=null && !"ทั้งหมด".equals(s)) fs.add(RowFilter.regexFilter(s, 4));
+        String q = tfSearch.getText().trim();
+        if (!q.isEmpty()) fs.add(RowFilter.regexFilter("(?i)"+q, 0,2));
+        sorter.setRowFilter(fs.isEmpty()? null : RowFilter.andFilter(fs));
+    };
+    btSearch.addActionListener(e -> doFilter.run());
+    btClear.addActionListener(e -> { cbStatus.setSelectedIndex(0); tfSearch.setText(""); sorter.setRowFilter(null); });
+    tfSearch.addActionListener(e -> doFilter.run());
+
+    // ปุ่มล่าง
+    JPanel act=new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    act.setBackground(new Color(255,250,240));
+    JButton bAdd=new JButton("➕ เพิ่ม"), bEdit=new JButton("✏️ แก้ไข"), bDel=new JButton("🗑️ ลบ");
+    for(JButton b:new JButton[]{bAdd,bEdit,bDel}) styleButton(b,new Color(200,245,236));
+    act.add(bAdd); act.add(bEdit); act.add(bDel);
+    page.add(act,BorderLayout.SOUTH);
+
+    bAdd.addActionListener(e->{
+        JTextField id=new JTextField(),cus=new JTextField(),total=new JTextField();
+        JComboBox<String> st=new JComboBox<>(new String[]{"ใหม่","รอดำเนินการ","กำลังเตรียม","จัดส่งแล้ว","สำเร็จ","ยกเลิก"});
+        Object[] msg={"เลขที่ออเดอร์:",id,"ลูกค้า/สาขา:",cus,"ยอดรวม:",total,"สถานะ:",st};
+        if(JOptionPane.showConfirmDialog(page,msg,"เพิ่มออเดอร์",JOptionPane.OK_CANCEL_OPTION)==JOptionPane.OK_OPTION)
+            m.addRow(new Object[]{id.getText(),LocalDate.now().toString(),cus.getText(),total.getText(),st.getSelectedItem()});
+    });
+
+    bEdit.addActionListener(e->{
+        int v = tb.getSelectedRow(); if(v<0){ msg("กรุณาเลือกแถวที่จะแก้ไข"); return; }
+        int r = tb.convertRowIndexToModel(v);
+        JTextField id=new JTextField(m.getValueAt(r,0).toString());
+        JTextField date=new JTextField(m.getValueAt(r,1).toString());
+        JTextField cus=new JTextField(m.getValueAt(r,2).toString());
+        JTextField total=new JTextField(m.getValueAt(r,3).toString());
+        JComboBox<String> st=new JComboBox<>(new String[]{"ใหม่","รอดำเนินการ","กำลังเตรียม","จัดส่งแล้ว","สำเร็จ","ยกเลิก"});
+        st.setSelectedItem(m.getValueAt(r,4).toString());
+        Object[] msg={"เลขที่ออเดอร์:",id,"วันที่:",date,"ลูกค้า/สาขา:",cus,"ยอดรวม:",total,"สถานะ:",st};
+        if(JOptionPane.showConfirmDialog(page,msg,"แก้ไขออเดอร์",JOptionPane.OK_CANCEL_OPTION)==JOptionPane.OK_OPTION){
+            m.setValueAt(id.getText(), r, 0);
+            m.setValueAt(date.getText(), r, 1);
+            m.setValueAt(cus.getText(), r, 2);
+            m.setValueAt(total.getText(), r, 3);
+            m.setValueAt(st.getSelectedItem(), r, 4);
+        }
+    });
+
+    Runnable delRun = () -> {
+        int[] rows = tb.getSelectedRows();
+        if(rows.length==0){ msg("กรุณาเลือกแถวที่จะลบ"); return; }
+        if(JOptionPane.showConfirmDialog(page,"ยืนยันการลบ "+rows.length+" แถว?","ยืนยัน",JOptionPane.OK_CANCEL_OPTION)!=JOptionPane.OK_OPTION) return;
+        for(int i=rows.length-1;i>=0;i--) m.removeRow(tb.convertRowIndexToModel(rows[i]));
+    };
+    bDel.addActionListener(e->delRun.run());
+    tb.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("DELETE"),"delRow");
+    tb.getActionMap().put("delRow", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ delRun.run(); }});
+
+    return page;
+}
+
+
+/* ================= Alerts Page ================= */
+private JComponent buildAlertsPage(){
+    JPanel page=new JPanel(new BorderLayout(10,10));
+    page.setBackground(new Color(250,250,245));
+    page.setBorder(new EmptyBorder(20,20,20,20));
+
+    JPanel header = new JPanel(new BorderLayout()); header.setOpaque(false);
+    JLabel h=new JLabel("🔔 แจ้งเตือน");
+    h.setFont(h.getFont().deriveFont(Font.BOLD,26f));
+    h.setForeground(new Color(245,130,31));
+    JButton btBack = mintButton("← กลับ");
+    btBack.addActionListener(e -> card.show(pages, "product"));
+    header.add(h, BorderLayout.WEST); header.add(btBack, BorderLayout.EAST);
+    page.add(header,BorderLayout.NORTH);
+
+    // ฟิลเตอร์
+    JPanel filters = new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    filters.setBackground(new Color(255,250,235));
+    JTextField tfSearch = new JTextField(18); tfSearch.setToolTipText("คำแจ้งเตือน/ประเภท");
+    JButton btSearch = new JButton("ค้นหา"); styleButton(btSearch,new Color(200,245,236));
+    JButton btClear  = new JButton("ล้าง");  styleButton(btClear, new Color(255,180,120));
+    filters.add(new JLabel("ค้นหา:")); filters.add(tfSearch);
+    filters.add(btSearch); filters.add(btClear);
+    page.add(filters, BorderLayout.BEFORE_FIRST_LINE);
+
+    DefaultTableModel m=new DefaultTableModel(new String[]{"เวลา","ประเภท","ข้อความ","สถานะ"},0){public boolean isCellEditable(int r,int c){return false;}};
+    JTable tb=new JTable(m); tb.setRowHeight(26);
+    JScrollPane sp=new JScrollPane(tb);
+    sp.setBorder(BorderFactory.createTitledBorder("รายการแจ้งเตือน"));
+    page.add(sp,BorderLayout.CENTER);
+
+    m.addRow(new Object[]{"09:32","สต็อก","น้ำส้มเหลือน้อย","ใหม่"});
+    m.addRow(new Object[]{"10:18","ออเดอร์","ลูกค้าใหม่สั่งซื้อ","ใหม่"});
+
+    JPanel a=new JPanel(new FlowLayout(FlowLayout.LEFT,10,8));
+    a.setBackground(new Color(255,250,240));
+    JButton bRead=new JButton("✔️ ทำเป็นอ่านแล้ว");
+    JButton bDel =new JButton("🗑️ ลบ");
+    for(JButton b:new JButton[]{bRead,bDel}) styleButton(b,new Color(200,245,236));
+    a.add(bRead); a.add(bDel);
+    page.add(a,BorderLayout.SOUTH);
+
+    // ค้นหา
+    final javax.swing.table.TableRowSorter<DefaultTableModel> sorter = new javax.swing.table.TableRowSorter<>(m);
+    tb.setRowSorter(sorter);
+    Runnable doFilter = () -> {
+        String q = tfSearch.getText().trim();
+        sorter.setRowFilter(q.isEmpty()? null : RowFilter.regexFilter("(?i)"+q, 1,2));
+    };
+    btSearch.addActionListener(e->doFilter.run());
+    btClear.addActionListener(e->{ tfSearch.setText(""); sorter.setRowFilter(null); });
+    tfSearch.addActionListener(e->doFilter.run());
+
+    bRead.addActionListener(e -> {
+        int[] sel = tb.getSelectedRows();
+        if (sel.length==0){ msg("เลือกแถวก่อน"); return; }
+        for (int v : sel) m.setValueAt("อ่านแล้ว", tb.convertRowIndexToModel(v), 3);
+    });
+
+    Runnable delRun = () -> {
+        int[] rows = tb.getSelectedRows();
+        if(rows.length==0){ msg("กรุณาเลือกแถวที่จะลบ"); return; }
+        if(JOptionPane.showConfirmDialog(page,"ยืนยันการลบ "+rows.length+" แถว?","ยืนยัน",JOptionPane.OK_CANCEL_OPTION)!=JOptionPane.OK_OPTION) return;
+        for(int i=rows.length-1;i>=0;i--) m.removeRow(tb.convertRowIndexToModel(rows[i]));
+    };
+    bDel.addActionListener(e->delRun.run());
+    tb.getInputMap(JComponent.WHEN_FOCUSED).put(KeyStroke.getKeyStroke("DELETE"),"delRow");
+    tb.getActionMap().put("delRow", new AbstractAction(){ public void actionPerformed(java.awt.event.ActionEvent e){ delRun.run(); }});
+
+    return page;
+}
+// ===== ฟอนต์ไทยที่มีในเครื่อง (เลือกตัวแรกที่พบ) =====
+private static String firstAvailableFont(String... names) {
+    String[] av = java.awt.GraphicsEnvironment
+            .getLocalGraphicsEnvironment()
+            .getAvailableFontFamilyNames();
+    java.util.Set<String> set = new java.util.HashSet<>();
+    for (String f : av) set.add(f);
+    for (String n : names) if (set.contains(n)) return n;
+    return "Dialog"; // fallback เผื่อไม่มีสักตัว
+}
+
+// ใช้กับหน้าแชททั้งหมด
+private static final String THAI_FONT =
+        firstAvailableFont("Tahoma", "Sarabun", "Kanit", "Noto Sans Thai", "Segoe UI", "Prompt", "Dialog");
+
+
+/* ================= Chat Page (แชทลูกค้า — สไตล์เฟซ, ไม่มี Auto-Reply) ================= */
+private JComponent buildChatPage() {
+    JPanel page = new JPanel(new BorderLayout(10,10));
+    page.setBackground(new Color(250,250,245));
+    page.setBorder(new EmptyBorder(20,20,20,20));
+
+    
+    // ===== Header =====
+    JPanel header = new JPanel(new BorderLayout());
+    header.setOpaque(false);
+    JLabel title = new JLabel("💬 แชทลูกค้า");
+    title.setFont(new Font("Tahoma", Font.BOLD, 26));
+    title.setForeground(new Color(245,130,31));
+    JButton btBack = mintButton("← กลับ");
+    btBack.addActionListener(e -> card.show(pages, "product"));
+    header.add(title, BorderLayout.WEST);
+    header.add(btBack, BorderLayout.EAST);
+    page.add(header, BorderLayout.NORTH);
+
+    // ===== รายชื่อลูกค้า =====
+    DefaultListModel<String> listModel = new DefaultListModel<>();
+    listModel.addElement("🟢 คุณอรดี (ยังไม่อ่าน)");
+    listModel.addElement("⚪ คุณมานพ (อ่านแล้ว)");
+    listModel.addElement("🟢 สาขาเชียงใหม่ (ยังไม่อ่าน)");
+
+    JList<String> customerList = new JList<>(listModel);
+    customerList.setFont(new Font("Tahoma", Font.PLAIN, 18));
+    customerList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+    JScrollPane listScroll = new JScrollPane(customerList);
+    listScroll.setBorder(BorderFactory.createTitledBorder("รายชื่อลูกค้า"));
+    customerList.setFont(new Font(THAI_FONT, Font.PLAIN, 18));
+
+
+
+    // ===== พื้นที่แชท: ใช้ JTextPane + StyledDocument ทำบับเบิลซ้าย/ขวา =====
+    JTextPane chatPane = new JTextPane();
+    chatPane.setEditable(false);
+    chatPane.setFont(new Font("Tahoma", Font.PLAIN, 17));
+    JScrollPane chatScroll = new JScrollPane(chatPane);
+    chatScroll.setBorder(BorderFactory.createTitledBorder("สนทนา"));
+    chatPane.setFont(new Font(THAI_FONT, Font.PLAIN, 17));
+
+    // กล่องพิมพ์ + ปุ่มส่ง
+    JTextField tfMessage = new JTextField();
+    JButton btSend = new JButton("ส่ง");
+    styleButton(btSend, new Color(67,226,206));
+    btSend.setFont(new Font("Tahoma", Font.BOLD, 18));
+    JPanel inputPanel = new JPanel(new BorderLayout(6,6));
+    inputPanel.add(tfMessage, BorderLayout.CENTER);
+    inputPanel.add(btSend, BorderLayout.EAST);
+    tfMessage.setFont(new Font(THAI_FONT, Font.PLAIN, 18));
+
+    JPanel chatPanel = new JPanel(new BorderLayout(10,10));
+    chatPanel.add(chatScroll, BorderLayout.CENTER);
+    chatPanel.add(inputPanel, BorderLayout.SOUTH);
+
+    JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, listScroll, chatPanel);
+    split.setDividerLocation(240);
+    split.setResizeWeight(0.30);
+    page.add(split, BorderLayout.CENTER);
+
+    // ===== เก็บประวัติแชท (ข้อความทีละรายการ) =====
+    Map<String, java.util.List<ChatMsg>> history = new java.util.HashMap<>();
+    history.put("คุณอรดี", new java.util.ArrayList<>(java.util.Arrays.asList(
+            new ChatMsg("ลูกค้า: สวัสดีค่ะ อยากสอบถามน้ำส้มแบบไม่ใส่น้ำตาลมีไหมคะ?", false),
+            new ChatMsg("ลูกค้า: มีส่งต่างจังหวัดไหมคะ?", false)
+    )));
+    history.put("คุณมานพ", new java.util.ArrayList<>(java.util.Arrays.asList(
+            new ChatMsg("ลูกค้า: ได้รับของแล้วครับ สดมากครับ", false),
+            new ChatMsg("ร้าน: ขอบคุณมากครับ", true)
+    )));
+    history.put("สาขาเชียงใหม่", new java.util.ArrayList<>(java.util.Arrays.asList(
+            new ChatMsg("พนักงาน: วันนี้ของหมดสต็อกแล้วครับ จะรับรอบพรุ่งนี้ไหมครับ?", false)
+    )));
+
+    // ===== ฟังก์ชันวาดบับเบิลลงใน JTextPane =====
+    Runnable renderSelected = () -> {
+        String sel = customerList.getSelectedValue();
+        if (sel == null) return;
+        String name = sel.replace("🟢 ","").replace("⚪ ","")
+                .replace(" (ยังไม่อ่าน)","").replace(" (อ่านแล้ว)","");
+        java.util.List<ChatMsg> msgs = history.getOrDefault(name, new java.util.ArrayList<>());
+        StyledDocument doc = chatPane.getStyledDocument();
+        try {
+            doc.remove(0, doc.getLength());
+        } catch (Exception ignored) {}
+
+        for (ChatMsg m : msgs) appendBubble(chatPane, m.text, m.me, m.time);
+        chatPane.setCaretPosition(doc.getLength());
+
+        // เปลี่ยนเป็นอ่านแล้ว
+        int idx = customerList.getSelectedIndex();
+        if (idx >= 0 && listModel.get(idx).contains("ยังไม่อ่าน")) {
+            listModel.set(idx, "⚪ " + name + " (อ่านแล้ว)");
+        }
+    };
+    
+    customerList.addListSelectionListener(e -> { if (!e.getValueIsAdjusting()) renderSelected.run(); });
+
+    // ===== ปุ่มส่ง (ร้านพิมพ์เอง – ไม่มี Auto Reply) =====
+ActionListener doSend = new ActionListener() {
+    @Override
+    public void actionPerformed(ActionEvent ev) {
+        String sel = (String) customerList.getSelectedValue();
+        if (sel == null) { 
+            msg("กรุณาเลือกลูกค้าก่อน"); 
+            return; 
+        }
+
+        // ตัดไอคอน/สถานะออกให้เหลือเฉพาะชื่อ
+        String name = sel
+                .replace("🟢 ", "")
+                .replace("⚪ ", "")
+                .replace(" (ยังไม่อ่าน)", "")
+                .replace(" (อ่านแล้ว)", "");
+
+        String text = tfMessage.getText().trim();
+        if (text.isEmpty()) return;
+
+        // ร้านส่งข้อความ
+        ChatMsg me = new ChatMsg("ร้าน: " + text, true);
+        history.computeIfAbsent(name, k -> new java.util.ArrayList<>()).add(me);
+
+        // แสดงเป็น bubble ทางขวา
+        appendBubble(chatPane, me.text, true, me.time);
+
+        tfMessage.setText("");
+        chatPane.setCaretPosition(chatPane.getDocument().getLength());
+    }
+};
+
+btSend.addActionListener(doSend);
+tfMessage.addActionListener(doSend);
+
+
+
+    // เลือกห้องแรกให้พร้อมใช้งาน
+    if (!listModel.isEmpty()) customerList.setSelectedIndex(0);
+
+    return page;
+}
+
+/* ===== บับเบิลสไตล์เฟซบุ๊ก (ซ้ายลูกค้า / ขวาร้าน) ===== */
+private void appendBubble(JTextPane pane, String text, boolean isMe, long timeMillis) {
+    StyledDocument doc = pane.getStyledDocument();
+    
+    // สี/สไตล์
+    Color meBg = new Color(200, 245, 236);   // มิ้นต์
+    Color otherBg = new Color(245, 245, 245);// เทาอ่อน
+    Color meFg = Color.BLACK;
+    Color otherFg = Color.DARK_GRAY;
+
+    // ย่อหน้าแยกบับเบิล
+    try { doc.insertString(doc.getLength(), "\n", null); } catch (Exception ignored) {}
+
+    // กรอบบับเบิล = ใส่ Space padding + ข้อความ + เวลา
+    String time = "  " + new java.text.SimpleDateFormat("HH:mm").format(new java.util.Date(timeMillis));
+    String bubbleText = text + time;
+
+    // สร้าง Attribute ของย่อหน้า (จัดชิดซ้าย/ขวา)
+    SimpleAttributeSet pAttr = new SimpleAttributeSet();
+    StyleConstants.setAlignment(pAttr, isMe ? StyleConstants.ALIGN_RIGHT : StyleConstants.ALIGN_LEFT);
+    pane.setParagraphAttributes(pAttr, true);
+
+    // สร้าง Attribute ของตัวอักษร + พื้นหลัง
+    SimpleAttributeSet a = new SimpleAttributeSet();
+    StyleConstants.setForeground(a, isMe ? meFg : otherFg);
+    StyleConstants.setBackground(a, isMe ? meBg : otherBg);
+    StyleConstants.setLeftIndent(a, 8);
+    StyleConstants.setRightIndent(a, 8);
+    StyleConstants.setSpaceAbove(a, 6);
+    StyleConstants.setSpaceBelow(a, 2);
+    StyleConstants.setFontSize(a, 17);
+    StyleConstants.setFirstLineIndent(a, 10);
+
+    StyleConstants.setFontFamily(a, THAI_FONT);
+
+    try { doc.insertString(doc.getLength(), "  " + bubbleText + "  ", a); } catch (Exception ignored) {}
+
+    // ลงบรรทัดใหม่ให้บับเบิลถัดไป
+    try { doc.insertString(doc.getLength(), "\n", null); } catch (Exception ignored) {}
+    
+
+}
+
+/* ===== โครงข้อความแชท (1 ข้อความต่อครั้ง) ===== */
+private static class ChatMsg {
+    final String text;     // ข้อความ (prefix ระบุฝ่ายแล้ว เช่น "ร้าน: ...", "ลูกค้า: ...")
+    final boolean me;      // true = ร้าน (ขวา), false = ลูกค้า (ซ้าย)
+    final long time;       // เวลา (ms)
+    ChatMsg(String t, boolean m){ this.text=t; this.me=m; this.time=System.currentTimeMillis(); }
+}
+
 
 
     /* ================= Placeholders ================= */
